@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>My Payments</h2>
+<a href="{% url 'payment_create' %}">Pay for Order</a>
+<ul>
+  {% for payment in payments %}
+    <li>Order #{{ payment.order.id }} - ${{ payment.amount }} - Method: {{ payment.method }}</li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Make Payment</h2>
+<form method="post">
+  {% csrf_token %}
+  <label>Select Order:</label>
+  <select name="order">
+    {% for order in orders %}
+      <option value="{{ order.id }}">Order #{{ order.id }} - ${{ order.total_price }}</option>
+    {% endfor %}
+  </select><br>
+  <label>Payment Method:</label>
+  <input type="text" name="method"><br>
+  <button type="submit">Pay</button>
+</form>
+{% endblock %}

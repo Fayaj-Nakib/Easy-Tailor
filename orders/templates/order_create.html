@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Place Order</h2>
+<form method="post" id="orderForm">
+  {% csrf_token %}
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label class="form-label">Choose Tailor</label>
+      <select class="form-select" name="tailor" required>
+        {% for t in tailors %}
+          <option value="{{ t.id }}">{{ t.shop_name|default:t.get_full_name|default:t.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-12">
+      <label class="form-label me-3">Measurement</label>
+      <label class="me-2"><input type="radio" name="measurement_type" value="regular" checked> Regular</label>
+      <label><input type="radio" name="measurement_type" value="custom"> Custom</label>
+    </div>
+  </div>
+  <div class="row mb-3" id="regularSizeRow">
+    <div class="col-md-4">
+      <label class="form-label">Size</label>
+      <select class="form-select" name="regular_size">
+        <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+      </select>
+    </div>
+  </div>
+  <div class="row mb-3 d-none" id="customMeasureRow">
+    <div class="col-md-12">
+      <div class="row g-2">
+        <div class="col"><input class="form-control" name="length" placeholder="Length"></div>
+        <div class="col"><input class="form-control" name="chest" placeholder="Chest"></div>
+        <div class="col"><input class="form-control" name="hand" placeholder="Hand"></div>
+        <div class="col"><input class="form-control" name="shoulder" placeholder="Shoulder"></div>
+        <div class="col"><input class="form-control" name="calf" placeholder="Calf"></div>
+        <div class="col"><input class="form-control" name="arm" placeholder="Arm"></div>
+        <div class="col"><input class="form-control" name="waist" placeholder="Waist"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mb-3">
+    <label>Design preference</label>
+    <textarea class="form-control" name="design_preference" rows="2" placeholder="Any design notes..."></textarea>
+  </div>
+  <table class="table" id="itemsTable">
+    <thead>
+      <tr>
+        <th>Gender</th>
+        <th>Service</th>
+        <th>Item</th>
+        <th>Category</th>
+        <th>Base Price</th>
+        <th>Measure</th>
+        <th>Size/Custom</th>
+        <th>Delivery</th>
+        <th>Qty</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="order-row">
+        <td>
+          <select name="gender[]" class="form-select gender-select">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </td>
+        <td>
+          <select name="service_type[]" class="form-select service-type-select">
+            <option value="new">Make New Cloth</option>
+            <option value="alter">Alter Cloth</option>
+            <option value="repair">Repair damaged cloth</option>
+          </select>
+        </td>
+        <td>
+          <select name="service[]" class="form-select service-select">
+            {% for service in services %}
+              <option value="{{ service.id }}" data-gender="{{ service.gender }}" data-price="{{ service.price }}" data-category="{{ service.category }}">{{ service.name }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        <td class="category-col">-</td>
+        <td class="price-col">0</td>
+        <td>
+          <select name="measurement_type[]" class="form-select measure-type-select">
+            <option value="regular">Regular</option>
+            <option value="custom">Custom</option>
+          </select>
+        </td>
+        <td class="measure-cell">
+          <select name="regular_size[]" class="form-select size-select">
+            <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+          </select>
+          <textarea name="custom_measurements[]" class="form-control d-none" rows="1" placeholder="length:40, chest:38, ..."></textarea>
+        </td>
+        <td>
+          <select name="delivery[]" class="form-select">
+            <option value="regular">Regular (7-10 days)</option>
+            <option value="emergency">Emergency (2-3 days)</option>
+          </select>
+        </td>
+        <td><input type="number" name="quantity[]" value="1" class="form-control" min="1" /></td>
+        <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+      </tr>
+    </tbody>
+  </table>
+  <button type="button" id="addRow" class="btn btn-secondary">Add more service</button>
+  <div class="mt-3"><strong>Total: $<span id="grandTotal">0</span></strong></div>
+  <button type="submit" class="btn btn-primary mt-2">Submit Order</button>
+</form>
+
+<script>
+  function filterOptions(row){
+    const gender = row.querySelector('.gender-select').value;
+    const select = row.querySelector('.service-select');
+    [...select.options].forEach(opt => {
+      opt.hidden = (opt.dataset.gender !== gender && opt.dataset.gender !== 'unisex');
+    });
+    // select first visible
+    const firstVisible = [...select.options].find(o => !o.hidden);
+    if(firstVisible){ select.value = firstVisible.value; }
+    updatePrice(row);
+  }
+  function updatePrice(row){
+    const select = row.querySelector('.service-select');
+    const opt = select.selectedOptions[0];
+    const price = opt?.dataset.price || '0';
+    const cat = opt?.dataset.category || '-';
+    const sType = row.querySelector('.service-type-select').value;
+    let adj = parseFloat(price || '0');
+    if(sType === 'alter') adj = adj * 0.4; else if(sType === 'repair') adj = adj * 0.25;
+    row.querySelector('.price-col').innerText = adj.toFixed(2);
+    row.querySelector('.category-col').innerText = cat;
+    updateGrandTotal();
+  }
+  function updateGrandTotal(){
+    let total = 0;
+    document.querySelectorAll('#itemsTable tbody tr').forEach(row=>{
+      const opt = row.querySelector('.service-select').selectedOptions[0];
+      let base = parseFloat(opt?.dataset.price || '0');
+      const sType = row.querySelector('.service-type-select').value;
+      if(sType === 'alter') base = base * 0.4; else if(sType === 'repair') base = base * 0.25;
+      const qty = parseInt(row.querySelector('input[name="quantity[]"]').value || '1');
+      const delivery = row.querySelector('select[name="delivery[]"]').value;
+      const mult = delivery === 'emergency' ? 1.3 : 1.0;
+      total += base * qty * mult;
+    });
+    document.getElementById('grandTotal').innerText = total.toFixed(2);
+  }
+  document.getElementById('addRow').addEventListener('click', function(){
+    const tbody = document.querySelector('#itemsTable tbody');
+    const clone = tbody.querySelector('.order-row').cloneNode(true);
+    clone.querySelectorAll('input').forEach(i=>{ if(i.name==='quantity[]'){ i.value = 1; }});
+    tbody.appendChild(clone);
+    attachHandlers(clone);
+    filterOptions(clone);
+  });
+  function attachHandlers(row){
+    row.querySelector('.gender-select').addEventListener('change', ()=>filterOptions(row));
+    row.querySelector('.service-type-select').addEventListener('change', ()=>updatePrice(row));
+    row.querySelector('.service-select').addEventListener('change', ()=>updatePrice(row));
+    row.querySelector('.measure-type-select').addEventListener('change', ()=>{
+      const isCustom = row.querySelector('.measure-type-select').value === 'custom';
+      row.querySelector('.size-select').classList.toggle('d-none', isCustom);
+      row.querySelector('textarea[name="custom_measurements[]"]').classList.toggle('d-none', !isCustom);
+    });
+    row.querySelector('select[name="delivery[]"]').addEventListener('change', updateGrandTotal);
+    row.querySelector('input[name="quantity[]"]').addEventListener('input', updateGrandTotal);
+    row.querySelector('.remove-row').addEventListener('click', function(){
+      const tbody = document.querySelector('#itemsTable tbody');
+      if(tbody.querySelectorAll('.order-row').length>1){ row.remove(); }
+      updateGrandTotal();
+    });
+  }
+  document.querySelectorAll('.order-row').forEach(attachHandlers);
+  // init
+  document.querySelectorAll('.order-row').forEach(filterOptions);
+  updateGrandTotal();
+
+  // measurement toggle
+  document.querySelectorAll('input[name="measurement_type"]').forEach(r=>{
+    r.addEventListener('change', function(){
+      const custom = this.value === 'custom';
+      document.getElementById('customMeasureRow').classList.toggle('d-none', !custom);
+      document.getElementById('regularSizeRow').classList.toggle('d-none', custom);
+    });
+  });
+</script>
+{% endblock %}
