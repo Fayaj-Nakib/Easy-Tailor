@@ -13,34 +13,7 @@
       </select>
     </div>
   </div>
-  <div class="row mb-3">
-    <div class="col-md-12">
-      <label class="form-label me-3">Measurement</label>
-      <label class="me-2"><input type="radio" name="measurement_type" value="regular" checked> Regular</label>
-      <label><input type="radio" name="measurement_type" value="custom"> Custom</label>
-    </div>
-  </div>
-  <div class="row mb-3" id="regularSizeRow">
-    <div class="col-md-4">
-      <label class="form-label">Size</label>
-      <select class="form-select" name="regular_size">
-        <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
-      </select>
-    </div>
-  </div>
-  <div class="row mb-3 d-none" id="customMeasureRow">
-    <div class="col-md-12">
-      <div class="row g-2">
-        <div class="col"><input class="form-control" name="length" placeholder="Length"></div>
-        <div class="col"><input class="form-control" name="chest" placeholder="Chest"></div>
-        <div class="col"><input class="form-control" name="hand" placeholder="Hand"></div>
-        <div class="col"><input class="form-control" name="shoulder" placeholder="Shoulder"></div>
-        <div class="col"><input class="form-control" name="calf" placeholder="Calf"></div>
-        <div class="col"><input class="form-control" name="arm" placeholder="Arm"></div>
-        <div class="col"><input class="form-control" name="waist" placeholder="Waist"></div>
-      </div>
-    </div>
-  </div>
+  
   <div class="mb-3">
     <label>Design preference</label>
     <textarea class="form-control" name="design_preference" rows="2" placeholder="Any design notes..."></textarea>
@@ -94,7 +67,19 @@
           <select name="regular_size[]" class="form-select size-select">
             <option>XS</option><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
           </select>
-          <textarea name="custom_measurements[]" class="form-control d-none" rows="1" placeholder="length:40, chest:38, ..."></textarea>
+          <!-- Hidden textarea kept for backend compatibility; auto-filled from the custom inputs below -->
+          <textarea name="custom_measurements[]" class="form-control d-none cm-hidden" rows="3" placeholder="length:40, chest:38, ..."></textarea>
+          <div class="custom-fields d-none mt-2">
+            <div class="row g-2">
+              <div class="col-6 col-md-4"><input type="text" class="form-control cm-length" placeholder="Length"></div>
+              <div class="col-6 col-md-4"><input type="text" class="form-control cm-chest" placeholder="Chest"></div>
+              <div class="col-6 col-md-4"><input type="text" class="form-control cm-hand" placeholder="Hand"></div>
+              <div class="col-6 col-md-4"><input type="text" class="form-control cm-shoulder" placeholder="Shoulder"></div>
+              <div class="col-6 col-md-4"><input type="text" class="form-control cm-calf" placeholder="Calf"></div>
+              <div class="col-6 col-md-4"><input type="text" class="form-control cm-arm" placeholder="Arm"></div>
+              <div class="col-6 col-md-4"><input type="text" class="form-control cm-waist" placeholder="Waist"></div>
+            </div>
+          </div>
         </td>
         <td>
           <select name="delivery[]" class="form-select">
@@ -165,7 +150,16 @@
     row.querySelector('.measure-type-select').addEventListener('change', ()=>{
       const isCustom = row.querySelector('.measure-type-select').value === 'custom';
       row.querySelector('.size-select').classList.toggle('d-none', isCustom);
-      row.querySelector('textarea[name="custom_measurements[]"]').classList.toggle('d-none', !isCustom);
+      // show structured inputs when custom
+      const cf = row.querySelector('.custom-fields');
+      const ta = row.querySelector('textarea[name="custom_measurements[]"]');
+      cf.classList.toggle('d-none', !isCustom);
+      ta.classList.toggle('d-none', true); // keep hidden, we sync from inputs
+      if (isCustom) syncCustomTextarea(row);
+    });
+    // attach input listeners to custom fields to keep textarea synced
+    row.querySelectorAll('.custom-fields input').forEach(inp=>{
+      inp.addEventListener('input', ()=>syncCustomTextarea(row));
     });
     row.querySelector('select[name="delivery[]"]').addEventListener('change', updateGrandTotal);
     row.querySelector('input[name="quantity[]"]').addEventListener('input', updateGrandTotal);
@@ -180,13 +174,21 @@
   document.querySelectorAll('.order-row').forEach(filterOptions);
   updateGrandTotal();
 
-  // measurement toggle
-  document.querySelectorAll('input[name="measurement_type"]').forEach(r=>{
-    r.addEventListener('change', function(){
-      const custom = this.value === 'custom';
-      document.getElementById('customMeasureRow').classList.toggle('d-none', !custom);
-      document.getElementById('regularSizeRow').classList.toggle('d-none', custom);
-    });
-  });
+  // helpers
+  function syncCustomTextarea(row){
+    const map = {
+      length: row.querySelector('.cm-length')?.value?.trim(),
+      chest: row.querySelector('.cm-chest')?.value?.trim(),
+      hand: row.querySelector('.cm-hand')?.value?.trim(),
+      shoulder: row.querySelector('.cm-shoulder')?.value?.trim(),
+      calf: row.querySelector('.cm-calf')?.value?.trim(),
+      arm: row.querySelector('.cm-arm')?.value?.trim(),
+      waist: row.querySelector('.cm-waist')?.value?.trim()
+    };
+    const parts = [];
+    Object.keys(map).forEach(k=>{ if(map[k]) parts.push(`${k}: ${map[k]}`); });
+    const ta = row.querySelector('textarea[name="custom_measurements[]"]');
+    if (ta) ta.value = parts.join(', ');
+  }
 </script>
 {% endblock %}

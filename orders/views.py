@@ -116,17 +116,9 @@ def order_create(request):
             except CustomUser.DoesNotExist:
                 chosen_tailor = None
         order = Order.objects.create(customer=request.user, tailor=chosen_tailor, service=services.first(), quantity=1, total_price=0)
-        # measurements
-        m_type = request.POST.get('measurement_type') or 'regular'
-        order.measurement_type = m_type
-        if m_type == 'regular':
-            order.regular_size = request.POST.get('regular_size') or ''
-        else:
-            fields = ['length','chest','hand','shoulder','calf','arm','waist']
-            values = {f: request.POST.get(f) for f in fields}
-            order.custom_measurements = '\n'.join([f"{k}: {v}" for k, v in values.items() if v])
+        # design notes kept; measurement now derived from per-item selections
         order.design_preference = request.POST.get('design_preference') or ''
-        order.save()
+        order.save(update_fields=['design_preference'])
         total_price = 0
         for idx, (g, sid, s_type, qty, d) in enumerate(zip(genders, service_ids, service_types, quantities, deliveries)):
             if not sid:
@@ -156,8 +148,18 @@ def order_create(request):
                 custom_measurements=custom_val if m_type == 'custom' else '',
             )
             total_price += line_total
+        # Derive order-level measurement summary from the first item (if any)
+        first_item = order.items.first()
+        if first_item:
+            order.measurement_type = first_item.measurement_type
+            if first_item.measurement_type == 'regular':
+                order.regular_size = first_item.regular_size or ''
+                order.custom_measurements = ''
+            else:
+                order.custom_measurements = first_item.custom_measurements or ''
+                order.regular_size = ''
         order.total_price = total_price
-        order.save(update_fields=['total_price'])
+        order.save(update_fields=['measurement_type', 'regular_size', 'custom_measurements', 'total_price'])
         return redirect('order_list')
     return render(request, 'order_create.html', {'services': services, 'tailors': tailors})
 
