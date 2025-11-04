@@ -121,10 +121,9 @@ python manage.py collectstatic --noinput
 gunicorn easytailor.wsgi:application --bind 0.0.0.0:$PORT
 ```
 
-### Screenshots
-You can add screenshots of pages like orders, services, and payments here once available.
+### Landing Page
 
-### License
-Add your preferred license (e.g., MIT) here.
+image.png
+
 
 
