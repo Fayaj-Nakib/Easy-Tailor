@@ -18,6 +18,7 @@ Your code is already prepared! The following are ready:
 - ✅ `requirements.txt` with all dependencies
 - ✅ Settings configured for environment variables
 - ✅ WhiteNoise configured for static files
+- ✅ Migrations configured to run automatically during build
 
 ### Step 2: Push to GitHub
 
@@ -69,8 +70,9 @@ git push -u origin main
    - **Environment**: `Python 3`
    - **Build Command**: 
      ```
-     pip install -r requirements.txt && python manage.py collectstatic --noinput
+     pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
      ```
+     *Note: Migrations run automatically during build (no shell access needed)*
    - **Start Command**: 
      ```
      gunicorn easytailor.wsgi:application --bind 0.0.0.0:$PORT
@@ -117,27 +119,35 @@ DATABASE_URL=postgresql://user:pass@dpg-xxxxx-a.oregon-postgres.render.com/easyt
 3. Watch the build logs - it should show:
    - Installing dependencies
    - Collecting static files
+   - Running database migrations
    - Starting the service
 
-### Step 8: Run Database Migrations
+### Step 8: Database Migrations (Automatic!)
 
-After the first successful deployment:
+**Good news!** Migrations run automatically during the build process. No shell access needed!
 
-1. Go to your Web Service dashboard
-2. Click on **"Shell"** tab (or use the terminal icon)
-3. Run migrations:
-   ```bash
-   python manage.py migrate
-   ```
-4. (Optional) Create superuser:
-   ```bash
-   python manage.py createsuperuser
-   ```
-   - Follow prompts to create admin account
-5. (Optional) Seed demo data:
-   ```bash
-   python manage.py seed
-   ```
+The Build Command already includes `python manage.py migrate --noinput`, so your database will be migrated every time you deploy.
+
+**If you need to create a superuser:**
+
+**Option A: Using Django Admin (Recommended)**
+1. After deployment, visit your app URL: `https://your-service-name.onrender.com/admin/`
+2. Click "Register" to create a new user account
+3. The first user created will have admin access (if your settings allow it)
+
+**Option B: Add to Build Command (One-time setup)**
+If you want to create a superuser automatically, temporarily modify the Build Command to:
+```
+pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput && echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'your-password')" | python manage.py shell
+```
+⚠️ **Important**: Change `'admin'`, `'admin@example.com'`, and `'your-password'` to your desired values, then remove this from the Build Command after first deployment for security.
+
+**Option C: Seed Demo Data (Optional)**
+To seed demo data, temporarily add to Build Command:
+```
+pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput && python manage.py seed
+```
+Remove the `&& python manage.py seed` part after first deployment.
 
 ### Step 9: Access Your Application
 
@@ -212,10 +222,11 @@ To update environment variables:
 
 ### Migrations Not Applied
 
-- Run migrations manually via Shell:
-  ```bash
-  python manage.py migrate
-  ```
+**If migrations aren't running:**
+- Verify the Build Command includes: `python manage.py migrate --noinput`
+- Check build logs to see if migrations ran (look for "Running migrations" messages)
+- Ensure `DATABASE_URL` environment variable is set correctly
+- Check that the database is running and accessible
 
 ---
 
@@ -261,6 +272,7 @@ To update environment variables:
 - Service may spin down after 15 minutes of inactivity (free tier)
 - First request after spin-down may be slow (cold start)
 - Database backups limited on free tier
+- **No shell access** - Use build command or startup script for migrations
 
 **Upgrade Options:**
 - Starter: $7/month (always-on, more resources)
