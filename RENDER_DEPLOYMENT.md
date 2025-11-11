@@ -181,7 +181,7 @@ To update environment variables:
 **Error: "Error loading psycopg2 or psycopg module"**
 - This error occurs when the PostgreSQL adapter cannot be loaded
 - **Solution**: The project now uses `psycopg[binary]` (psycopg3) which is compatible with Python 3.13+
-- If you still see this error, ensure `requirements.txt` includes `psycopg[binary]==3.2.0` (not `psycopg2-binary`)
+- If you still see this error, ensure `requirements.txt` includes `psycopg[binary]>=3.2.2` (not `psycopg2-binary`)
 - Alternative: Pin Python to 3.11 or 3.12 by creating a `runtime.txt` file with `python-3.11.9` or `python-3.12.4`
 
 **Error: "Module not found"**
