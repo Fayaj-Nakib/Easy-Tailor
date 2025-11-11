@@ -95,10 +95,12 @@ In your Web Service settings, go to **"Environment"** tab and add:
 2. **DEBUG**
    - Add as: `DEBUG` = `False`
 
-3. **ALLOWED_HOSTS**
+3. **ALLOWED_HOSTS** ⚠️ **REQUIRED - This prevents 400 errors!**
    - Add as: `ALLOWED_HOSTS` = `your-service-name.onrender.com`
    - Replace `your-service-name` with your actual service name from Step 5
+   - **Example**: If your service URL is `https://easy-tailor.onrender.com`, set `ALLOWED_HOSTS` = `easy-tailor.onrender.com`
    - If you have a custom domain later, add it like: `yourdomain.com,www.yourdomain.com`
+   - **Important**: Without this, all requests will return 400 Bad Request errors!
 
 4. **DATABASE_URL**
    - Paste the **Internal Database URL** you copied in Step 4
@@ -203,6 +205,17 @@ To update environment variables:
 - Ensure `STATIC_ROOT` is set correctly (already configured)
 
 ### Application Crashes
+
+**400 Bad Request Error (Most Common!)**
+- **This is the most common issue!** All requests return 400 status code
+- **Cause**: `ALLOWED_HOSTS` environment variable is not set or is empty
+- **Solution**: 
+  1. Go to your Render service → **"Environment"** tab
+  2. Add or update the `ALLOWED_HOSTS` variable
+  3. Set it to: `easy-tailor.onrender.com` (replace with your actual service name)
+  4. Click **"Save Changes"** - the service will automatically restart
+  5. Wait a few seconds and refresh your browser
+- **Note**: The value should be just the domain name (e.g., `easy-tailor.onrender.com`), NOT a comma-separated list unless you have multiple domains
 
 **500 Internal Server Error**
 - Check logs in Render dashboard → **"Logs"** tab
