@@ -74,9 +74,9 @@ git push -u origin main
      ```
      *Note: Migrations run automatically during build (no shell access needed)*
    - **Start Command**: 
-     ```
-     gunicorn easytailor.wsgi:application --bind 0.0.0.0:$PORT
-     ```
+     - Option 1: Leave empty (Procfile will be used automatically, which runs `start.sh`)
+     - Option 2: Set to `bash start.sh` (if you want to be explicit)
+     - The `start.sh` script automatically runs migrations and creates a superuser if configured
    - **Plan**: Free tier is fine to start
 4. Click **"Advanced"** to set environment variables (or do it after creation)
 
@@ -106,12 +106,31 @@ In your Web Service settings, go to **"Environment"** tab and add:
    - Paste the **Internal Database URL** you copied in Step 4
    - Add as: `DATABASE_URL` = `<paste-internal-database-url>`
 
+5. **ADMIN_USERNAME** (Optional - for automatic superuser creation)
+   - Username for the admin superuser
+   - Default: `admin` if not set
+   - Add as: `ADMIN_USERNAME` = `admin`
+
+6. **ADMIN_EMAIL** (Optional - for automatic superuser creation)
+   - Email for the admin superuser
+   - Default: `admin@example.com` if not set
+   - Add as: `ADMIN_EMAIL` = `admin@example.com`
+
+7. **ADMIN_PASSWORD** (Optional - for automatic superuser creation)
+   - Password for the admin superuser
+   - **Important**: Choose a strong password!
+   - Add as: `ADMIN_PASSWORD` = `your-secure-password`
+   - If not set, superuser will not be created automatically (you'll need to create it manually)
+
 **Example Environment Variables:**
 ```
 SECRET_KEY=django-insecure-abc123xyz789...
 DEBUG=False
 ALLOWED_HOSTS=easytailor.onrender.com
 DATABASE_URL=postgresql://user:pass@dpg-xxxxx-a.oregon-postgres.render.com/easytailor
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=your-secure-password-here
 ```
 
 ### Step 7: Deploy
@@ -132,17 +151,22 @@ The Build Command already includes `python manage.py migrate --noinput`, so your
 
 **If you need to create a superuser:**
 
-**Option A: Using Django Admin (Recommended)**
-1. After deployment, visit your app URL: `https://your-service-name.onrender.com/admin/`
-2. Click "Register" to create a new user account
-3. The first user created will have admin access (if your settings allow it)
+**Option A: Automatic Creation (Recommended)**
+The startup script automatically creates a superuser if you set these environment variables:
+- `ADMIN_USERNAME` (default: `admin`)
+- `ADMIN_EMAIL` (default: `admin@example.com`)
+- `ADMIN_PASSWORD` (required)
 
-**Option B: Add to Build Command (One-time setup)**
-If you want to create a superuser automatically, temporarily modify the Build Command to:
-```
-pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput && echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'your-password')" | python manage.py shell
-```
-⚠️ **Important**: Change `'admin'`, `'admin@example.com'`, and `'your-password'` to your desired values, then remove this from the Build Command after first deployment for security.
+Just add these to your environment variables in Step 6, and the superuser will be created automatically on first startup!
+
+**Option B: Manual Creation (If you didn't set ADMIN_PASSWORD)**
+If you prefer to create a superuser manually, you can use Render's Shell feature:
+1. Go to your service dashboard
+2. Click on the **"Shell"** tab
+3. Run: `python manage.py createsuperuser`
+4. Follow the prompts
+
+**Note**: The automatic superuser creation only runs if no superuser exists, so it's safe to keep the environment variables set.
 
 **Option C: Seed Demo Data (Optional)**
 To seed demo data, temporarily add to Build Command:

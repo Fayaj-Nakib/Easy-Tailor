@@ -4,20 +4,84 @@
   <div class="card shadow-lg p-4" style="min-width:340px;max-width:440px;width:100%;">
     <div class="card-body">
       <h2 class="text-center mb-4"><i class="bi bi-person-plus me-2 text-success"></i>Register at <span class="fw-bold">EasyTailor</span></h2>
+      
+      {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+          <strong>Please correct the errors below:</strong>
+          {% if form.non_field_errors %}
+            <ul class="mb-0">
+              {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% endif %}
+      
       <form method="post">
         {% csrf_token %}
-        <div class="mb-3">{{ form.username.label_tag }}{{ form.username }}</div>
-        <div class="mb-3">{{ form.email.label_tag }}{{ form.email }}</div>
-        <div class="row g-2">
-          <div class="col mb-3">{{ form.first_name.label_tag }}{{ form.first_name }}</div>
-          <div class="col mb-3">{{ form.last_name.label_tag }}{{ form.last_name }}</div>
+        <div class="mb-3">
+          {{ form.username.label_tag }}{{ form.username }}
+          {% if form.username.errors %}
+            <div class="text-danger small">{{ form.username.errors }}</div>
+          {% endif %}
         </div>
-        <div class="mb-3">{{ form.phone.label_tag }}{{ form.phone }}</div>
-        <div class="mb-3">{{ form.address.label_tag }}{{ form.address }}</div>
-        <div class="mb-3">{{ form.shop_name.label_tag }}{{ form.shop_name }}</div>
-        <div class="mb-3">{{ form.role.label_tag }}{{ form.role }}</div>
-        <div class="mb-3">{{ form.password1.label_tag }}{{ form.password1 }}</div>
-        <div class="mb-3">{{ form.password2.label_tag }}{{ form.password2 }}</div>
+        <div class="mb-3">
+          {{ form.email.label_tag }}{{ form.email }}
+          {% if form.email.errors %}
+            <div class="text-danger small">{{ form.email.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="row g-2">
+          <div class="col mb-3">
+            {{ form.first_name.label_tag }}{{ form.first_name }}
+            {% if form.first_name.errors %}
+              <div class="text-danger small">{{ form.first_name.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col mb-3">
+            {{ form.last_name.label_tag }}{{ form.last_name }}
+            {% if form.last_name.errors %}
+              <div class="text-danger small">{{ form.last_name.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="mb-3">
+          {{ form.phone.label_tag }}{{ form.phone }}
+          {% if form.phone.errors %}
+            <div class="text-danger small">{{ form.phone.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.address.label_tag }}{{ form.address }}
+          {% if form.address.errors %}
+            <div class="text-danger small">{{ form.address.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.shop_name.label_tag }}{{ form.shop_name }}
+          {% if form.shop_name.errors %}
+            <div class="text-danger small">{{ form.shop_name.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.role.label_tag }}{{ form.role }}
+          {% if form.role.errors %}
+            <div class="text-danger small">{{ form.role.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.password1.label_tag }}{{ form.password1 }}
+          {% if form.password1.errors %}
+            <div class="text-danger small">{{ form.password1.errors }}</div>
+          {% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.password2.label_tag }}{{ form.password2 }}
+          {% if form.password2.errors %}
+            <div class="text-danger small">{{ form.password2.errors }}</div>
+          {% endif %}
+        </div>
         <div class="d-grid mb-2">
           <button type="submit" class="btn btn-success btn-lg">Register <i class="bi bi-check-all"></i></button>
         </div>
